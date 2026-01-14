@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE風トーク動画メーカー Ver.18 (13文字折返し版)</title>
+    <style>
+        /* --------------------------------------------------
+       設定エリア
+    -------------------------------------------------- */
+        :root {
+            --bg-color: #8CABD9;
+            /* 背景色 */
+            --me-bubble: #6DE67C;
+            /* 自分の吹き出し色 */
+            --partner-bubble: #FFFFFF;
+            /* 相手の吹き出し色 */
+            --default-icon: #000000;
+            /* デフォルトアイコン色 */
+            --text-color: #000000;
+            /* 文字色 */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-color);
+            padding-top: 100px;
+            padding-bottom: 120px;
+            /* 左右の余白（ここを基準に揃います） */
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+
+        /* --------------------------------------------------
+       チャットのスタイル (修正箇所)
+    -------------------------------------------------- */
+        .chat-row {
+            display: flex;
+            margin-bottom: 10px;
+            width: 100%;
+            animation: slideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 吹き出し共通設定 */
+        .bubble {
+            position: relative;
+            padding: 8px 12px;
+            border-radius: 12px;
+            /* 全角丸 */
+            font-size: 15px;
+            line-height: 1.4;
+            color: var(--text-color);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+            /* ★13文字制限の設定 */
+            /* 1文字=1em + 左右padding分(約2em) = 合計15em程度で制限 */
+            max-width: 15em;
+            word-wrap: break-word;
+            /* 長い英数字も強制的に折り返す */
+        }
+
+        .time {
+            font-size: 10px;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .read-mark {
+            font-size: 10px;
+            color: #fff;
+            margin-bottom: 2px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .name {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 4px;
+            margin-left: 2px;
+        }
+
+        /* --- 相手（左側） --- */
+        .left {
+            justify-content: flex-start;
+        }
+
+        .left .chat-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .left .bubble {
+            background-color: var(--partner-bubble);
+            /* しっぽ無しのため角丸統一 */
+            border-radius: 12px;
+        }
+
+        .left .row-bottom {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .left .time {
+            margin-left: 6px;
+            margin-bottom: 2px;
+        }
+
+        .left .avatar {
+            width: 40px;
+            height: 40px;
+            background-color: var(--default-icon);
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .left .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- 自分（右側） --- */
+        .right {
+            justify-content: flex-end;
+        }
+
+        .right .chat-content {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+        }
+
+        .right .bubble {
+            background-color: var(--me-bubble);
+            /* しっぽ無しのため角丸統一 */
+            border-radius: 8px;
+            /* 余白をゼロにして右端に揃える */
+            margin-right: 0;
+        }
+
+        /* 吹き出しのしっぽ（::after）は削除済み */
+
+        .right .info-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            margin-right: 6px;
+            margin-bottom: 2px;
+        }
+
+        /* --- UIパーツ（アップロード画面等） --- */
+        .upload-box {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 480px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .step-section {
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fdfdfd;
+            text-align: left;
+        }
+
+        .step-label {
+            font-size: 13px;
+            color: #333;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 10px;
+            border-left: 4px solid #4b7bec;
+            padding-left: 8px;
+        }
+
+        .btn,
+        .input-text {
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 13px;
+            width: 100%;
+            border: 1px solid #ccc;
+            margin-bottom: 8px;
+        }
+
+        .input-text {
+            background: #fff;
+            color: #333;
+        }
+
+        .btn {
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: block;
+            transition: 0.2s;
+            line-height: 1.4;
+        }
+
+        .btn-white {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            color: #333;
+        }
+
+        .btn-white:hover {
+            background-color: #f0f0f0;
+        }
+
+        .btn-blue {
+            background-color: #4b7bec;
+            color: white;
+        }
+
+        .btn-blue:hover {
+            background-color: #3867d6;
+        }
+
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: block;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .file-input-container input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-visual-btn {
+            background-color: #4b7bec;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 13px;
+            display: block;
+            text-align: center;
+        }
+
+        .file-visual-btn:hover {
+            background-color: #3867d6;
+        }
+
+        .status-msg {
+            font-size: 11px;
+            color: #06c755;
+            margin-bottom: 5px;
+            height: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            color: #999;
+            font-size: 11px;
+            margin: 10px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .divider::before {
+            margin-right: 10px;
+        }
+
+        .divider::after {
+            margin-left: 10px;
+        }
+
+        .guide-details {
+            background: #f4f7fa;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e1e4e8;
+        }
+
+        .guide-details summary {
+            font-size: 11px;
+            font-weight: bold;
+            color: #4b7bec;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .guide-content {
+            font-size: 11px;
+            color: #555;
+            line-height: 1.5;
+            margin-top: 8px;
+            padding-left: 5px;
+        }
+
+        .guide-content ol {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+
+        .btn-start {
+            background-color: #06c755;
+            color: white;
+            margin-top: 5px;
+            font-size: 16px;
+            padding: 15px;
+        }
+
+        .btn-start:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .btn-start:not(:disabled):hover {
+            background-color: #05b34c;
+        }
+
+        .operation-guide {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+            z-index: 90;
+            backdrop-filter: blur(4px);
+            display: none;
+        }
+
+        .key-badge {
+            background: #fff;
+            color: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 12px;
+            z-index: 200;
+            display: none;
+            text-align: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-record {
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-record:hover {
+            background-color: #ff6b81;
+        }
+
+        .status-text {
+            color: white;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="upload-box" id="uploadArea">
+        <h2>トーク動画メーカー</h2>
+
+        <div class="step-section">
+            <span class="step-label">① 相手のアイコン画像 (任意)</span>
+            <div class="file-input-container">
+                <div class="file-visual-btn">👤 画像を選択する...</div>
+                <input type="file" id="iconInput" accept="image/*">
+            </div>
+            <div class="status-msg" id="iconStatus"></div>
+        </div>
+
+        <div class="step-section">
+            <span class="step-label">② トークデータの読み込み (どちらか一つ)</span>
+
+            <div style="margin-bottom: 15px;">
+                <button class="btn btn-white" onclick="downloadCsvTemplate()">
+                    📥 テンプレート(CSV)をダウンロード
+                </button>
+                <div class="file-input-container">
+                    <div class="file-visual-btn">📄 CSVファイルをアップロード</div>
+                    <input type="file" id="fileInput" accept=".csv">
+                </div>
+                <div class="status-msg" id="fileStatus"></div>
+            </div>
+
+            <div class="divider">または</div>
+
+            <div>
+                <details class="guide-details">
+                    <summary>💡 スプレッドシートの使い方・公開手順 (クリック)</summary>
+                    <div class="guide-content">
+                        <strong>1. データの準備</strong><br>
+                        <button class="btn btn-white" onclick="copyTableData()" style="font-size:10px; padding:5px;">
+                            📋 スプレッドシート用データをコピー
+                        </button>
+                        <div id="copyStatus" style="color:#06c755;"></div>
+                        <div style="margin-top:5px;">↑コピーしてシートのA1に貼り付け</div>
+                        <br>
+                        <strong>2. Webに公開する</strong>
+                        <ol>
+                            <li>[ファイル] → [共有] → [Webに公開]</li>
+                            <li>形式を <strong>[カンマ区切り形式 (.csv)]</strong> に変更</li>
+                            <li>公開してURLをコピー</li>
+                        </ol>
+                    </div>
+                </details>
+
+                <input type="text" id="urlInput" class="input-text"
+                    placeholder="https://docs.google.com/.../pub?output=csv">
+                <div class="status-msg" id="urlStatus"></div>
+            </div>
+        </div>
+
+        <button id="startBtn" class="btn btn-start" disabled onclick="startTool()">
+            トーク画面を作成 ▶
+        </button>
+    </div>
+
+    <div class="operation-guide" id="guideArea">
+        <div style="margin-bottom:5px; font-weight:bold; border-bottom:1px solid rgba(255,255,255,0.3);">操作ガイド</div>
+        <div><span class="key-badge">Enter</span> メッセージを進む</div>
+        <div><span class="key-badge">Backspace</span> ひとつ戻る</div>
+    </div>
+
+    <div class="control-panel" id="controlPanel">
+        <button class="btn-record" id="recordBtn" onclick="startRecording()">● 録画＆自動再生</button>
+        <div class="status-text" id="statusText">7文字ごとに+0.5秒</div>
+    </div>
+
+    <div class="container" id="chatArea"></div>
+
+    <script>
+        let chatData = [];
+        let userIconDataUrl = null;
+        let uploadedCsvText = null;
+        let currentIndex = 0;
+        let autoPlayTimeout = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+
+        // --- CSVテンプレートDL ---
+        function downloadCsvTemplate() {
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            const dataLines = [
+                "Who,Message,Time",
+                "自分,こんにちは！これで13文字制限のテストです。,10:00",
+                "相手,しっぽが無くなってスッキリしたね。,10:01",
+                "自分,はい。右端もきれいに揃っているはずです。長文テスト：あいうえおかきくけこさしすせそたちつてと,10:02"
+            ];
+            const content = dataLines.join("\n");
+            const blob = new Blob([bom, content], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "sample_talk.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // --- スプレッドシート用データコピー ---
+        function copyTableData() {
+            const dataLines = [
+                "Who\tMessage\tTime",
+                "自分\t13文字折り返しのテスト。\t10:00",
+                "相手\tズレも解消された？\t10:01",
+                "自分\tはい。吹き出しの形もシンプルになって、右端が一直線に揃います。\t10:02"
+            ];
+            const text = dataLines.join("\n");
+            navigator.clipboard.writeText(text).then(() => {
+                const status = document.getElementById('copyStatus');
+                status.innerText = "コピーしました！";
+                setTimeout(() => { status.innerText = ""; }, 2000);
+            });
+        }
+
+        // --- アイコン読み込み ---
+        document.getElementById('iconInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                userIconDataUrl = evt.target.result;
+                document.getElementById('iconStatus').innerText = "セット完了: " + file.name;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // --- CSVファイル読み込み ---
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                uploadedCsvText = evt.target.result;
+                document.getElementById('fileStatus').innerText = "読込完了: " + file.name;
+                document.getElementById('urlInput').value = "";
+                document.getElementById('urlStatus').innerText = "";
+                document.getElementById('startBtn').disabled = false;
+            };
+            reader.readAsText(file);
+        });
+
+        // --- URL入力監視 ---
+        document.getElementById('urlInput').addEventListener('input', function (e) {
+            const url = e.target.value.trim();
+            const btn = document.getElementById('startBtn');
+            if (url.length > 5) {
+                document.getElementById('fileInput').value = "";
+                uploadedCsvText = null;
+                document.getElementById('fileStatus').innerText = "";
+                document.getElementById('urlStatus').innerText = "URLが入力されました";
+                btn.disabled = false;
+            } else {
+                if (!uploadedCsvText) btn.disabled = true;
+                document.getElementById('urlStatus').innerText = "";
+            }
+        });
+
+        // --- スタート処理 ---
+        async function startTool() {
+            const url = document.getElementById('urlInput').value.trim();
+            const btn = document.getElementById('startBtn');
+
+            if (uploadedCsvText) {
+                parseCSV(uploadedCsvText);
+                startDisplay();
+                return;
+            }
+            if (url) {
+                if (!url.includes('output=csv')) {
+                    alert("URLエラー: 末尾が output=csv のURLを使用してください");
+                    return;
+                }
+                btn.innerText = "読み込み中...";
+                btn.disabled = true;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error("アクセスエラー");
+                    const csvText = await response.text();
+                    parseCSV(csvText);
+                    startDisplay();
+                } catch (err) {
+                    alert("読み込み失敗: " + err.message);
+                    btn.innerText = "トーク画面を作成 ▶";
+                    btn.disabled = false;
+                }
+                return;
+            }
+        }
+
+        function startDisplay() {
+            if (chatData.length === 0) {
+                alert("データが見つかりません");
+                return;
+            }
+            document.getElementById('uploadArea').style.display = 'none';
+            document.getElementById('controlPanel').style.display = 'block';
+            document.getElementById('guideArea').style.display = 'block';
+        }
+
+        // --- 共通機能 ---
+        document.addEventListener('keydown', function (e) {
+            if (document.getElementById('uploadArea').style.display !== 'none') return;
+            if (e.key === 'Enter') { e.preventDefault(); showMessage(); }
+            else if (e.key === 'Backspace') { e.preventDefault(); hideMessage(); }
+        });
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: { mediaSource: "screen" } });
+                document.getElementById('controlPanel').style.display = 'none';
+                document.getElementById('guideArea').style.display = 'none';
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                recordedChunks = [];
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.onstop = saveVideo;
+                mediaRecorder.start();
+
+                setTimeout(processNextMessage, 1000);
+            } catch (err) {
+                alert("キャンセルされました");
+                document.getElementById('controlPanel').style.display = 'block';
+                document.getElementById('guideArea').style.display = 'block';
+            }
+        }
+
+        function processNextMessage() {
+            if (!showMessage()) { setTimeout(finishRecording, 2000); return; }
+            const lastMsg = chatData[currentIndex - 1];
+            const wait = Math.max(0.5, Math.ceil(lastMsg.msg.length / 7) * 0.5) * 1000;
+            autoPlayTimeout = setTimeout(processNextMessage, wait);
+        }
+
+        function finishRecording() {
+            if (autoPlayTimeout) clearTimeout(autoPlayTimeout);
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            }
+        }
+
+        function saveVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none'; a.href = url; a.download = 'line_talk_movie.webm';
+            document.body.appendChild(a); a.click();
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                document.getElementById('controlPanel').style.display = 'block';
+                document.getElementById('guideArea').style.display = 'block';
+                document.getElementById('statusText').innerText = "保存完了";
+            }, 100);
+        }
+
+        function parseCSV(csvText) {
+            const rows = csvText.trim().replace(/\r\n/g, '\n').split('\n');
+            chatData = [];
+            for (let i = 1; i < rows.length; i++) {
+                let cols = rows[i].split(',');
+                if (cols.length < 2) continue;
+                const clean = s => s ? s.trim().replace(/^"|"$/g, '') : '';
+                chatData.push({ who: clean(cols[0]), msg: clean(cols[1]), time: cols[2] ? clean(cols[2]) : '' });
+            }
+            currentIndex = 0;
+        }
+
+        function showMessage() {
+            if (currentIndex >= chatData.length) return false;
+            const data = chatData[currentIndex];
+            const chatArea = document.getElementById('chatArea');
+            const isMe = ['Me', 'me', '自分', 'Self'].includes(data.who);
+
+            let html = '';
+            if (isMe) {
+                html = `<div class="chat-row right"><div class="chat-content"><div class="info-column"><span class="read-mark">既読</span><span class="time">${data.time}</span></div><div class="bubble">${data.msg}</div></div></div>`;
+            } else {
+                const avatarHtml = userIconDataUrl ? `<img src="${userIconDataUrl}">` : ``;
+                html = `<div class="chat-row left"><div class="avatar">${avatarHtml}</div><div class="chat-content"><div class="name">${data.who}</div><div class="row-bottom"><div class="bubble">${data.msg}</div><span class="time">${data.time}</span></div></div></div>`;
+            }
+            chatArea.insertAdjacentHTML('beforeend', html);
+            currentIndex++;
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            return true;
+        }
+
+        function hideMessage() {
+            if (currentIndex <= 0) return;
+            document.getElementById('chatArea').lastElementChild.remove();
+            currentIndex--;
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+    </script>
+</body>
+
+</html>
