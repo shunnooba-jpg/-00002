@@ -377,7 +377,7 @@
     function processNextMessage() {
         if (!showMessage()) { setTimeout(finishRecording, 2000); return; }
         const lastMsg = chatData[currentIndex - 1];
-        const wait = Math.max(0.5, Math.ceil(lastMsg.msg.length / 7) * 0.5) * 1000;
+        const wait = Math.max(0.5, Math.ceil(lastMsg.msg.length / 7) * 0.8) * 1000;
         autoPlayTimeout = setTimeout(processNextMessage, wait);
     }
 
