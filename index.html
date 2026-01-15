@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LINE風トーク動画メーカー Ver.21 (既読数対応)</title>
+<title>LINE風トーク動画メーカー Ver.22 (システムメッセージ対応)</title>
 <style>
     /* --------------------------------------------------
        設定エリア
@@ -34,58 +34,6 @@
     }
     
     /* --------------------------------------------------
-       UIパーツ
-    -------------------------------------------------- */
-    .upload-box {
-        background: rgba(255, 255, 255, 0.98);
-        padding: 30px; border-radius: 16px;
-        text-align: center;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        width: 90%; max-width: 480px;
-        position: fixed; top: 50%; left: 50%; 
-        transform: translate(-50%, -50%); z-index: 100;
-        display: flex; flex-direction: column; gap: 15px;
-        max-height: 95vh; overflow-y: auto;
-    }
-    h2 { margin: 0 0 5px 0; font-size: 20px; color: #333; }
-    
-    .step-section { border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; background: #fdfdfd; text-align: left; }
-    .step-label { font-size: 13px; color: #333; font-weight: bold; display: block; margin-bottom: 10px; border-left: 4px solid #4b7bec; padding-left: 8px; }
-    
-    .btn, .input-text { padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; width: 100%; border: 1px solid #ccc; margin-bottom: 8px; }
-    .input-text { background: #fff; color: #333; }
-    .btn { cursor: pointer; border: none; text-decoration: none; display: block; transition: 0.2s; line-height: 1.4; }
-    .btn-white { background-color: #fff; border: 1px solid #ccc; color: #333; } .btn-white:hover { background-color: #f0f0f0; }
-    .btn-blue { background-color: #4b7bec; color: white; } .btn-blue:hover { background-color: #3867d6; }
-    
-    .file-input-container { position: relative; overflow: hidden; display: block; width: 100%; margin-bottom: 8px; }
-    .file-input-container input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-    .file-visual-btn { background-color: #4b7bec; color: white; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; display: block; text-align: center; }
-    .file-visual-btn:hover { background-color: #3867d6; }
-    
-    .status-msg { font-size: 11px; color: #06c755; margin-bottom: 5px; height: auto; white-space: pre-wrap; line-height: 1.4; }
-    .divider { display: flex; align-items: center; color: #999; font-size: 11px; margin: 10px 0; }
-    .divider::before, .divider::after { content: ""; flex: 1; border-bottom: 1px solid #ddd; }
-    .divider::before { margin-right: 10px; } .divider::after { margin-left: 10px; }
-    
-    .guide-details { background: #f4f7fa; border-radius: 6px; padding: 8px; margin-bottom: 10px; border: 1px solid #e1e4e8; }
-    .guide-details summary { font-size: 11px; font-weight: bold; color: #4b7bec; cursor: pointer; outline: none; }
-    .guide-content { font-size: 11px; color: #555; line-height: 1.5; margin-top: 8px; padding-left: 5px;}
-    .guide-content ol { padding-left: 20px; margin: 5px 0; }
-    
-    .btn-start { background-color: #06c755; color: white; margin-top: 5px; font-size: 16px; padding: 15px; }
-    .btn-start:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.7; }
-    .btn-start:not(:disabled):hover { background-color: #05b34c; }
-    
-    .operation-guide { position: fixed; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 10px 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; z-index: 90; backdrop-filter: blur(4px); display: none; }
-    .key-badge { background: #fff; color: #333; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 4px; }
-    
-    .control-panel { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 12px; z-index: 200; display: none; text-align: center; backdrop-filter: blur(4px); }
-    .btn-record { background-color: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-    .btn-record:hover { background-color: #ff6b81; }
-    .status-text { color: white; font-size: 12px; margin-top: 8px; }
-
-    /* --------------------------------------------------
        チャットのスタイル
     -------------------------------------------------- */
     .chat-row { display: flex; margin-bottom: 10px; width: 100%; animation: slideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
@@ -98,15 +46,7 @@
         max-width: 15em; word-wrap: break-word; 
     }
     .time { font-size: 10px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-    
-    /* 既読マークのデザイン調整 */
-    .read-mark { 
-        font-size: 10px; color: #fff; margin-bottom: 2px; font-weight: bold; 
-        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        text-align: right; /* 右寄せ */
-        white-space: nowrap;
-    }
-
+    .read-mark { font-size: 10px; color: #fff; margin-bottom: 2px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.1); text-align: right; white-space: nowrap; }
     .name { font-size: 11px; color: #555; margin-bottom: 4px; margin-left: 2px; }
 
     /* 相手 */
@@ -127,18 +67,82 @@
     .right .bubble { background-color: var(--me-bubble); border-radius: 18px; margin-right: 0; }
     .right .info-column { display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; margin-right: 6px; margin-bottom: 2px; }
 
+    /* ★システムメッセージ（参加・退出など） */
+    .system-row {
+        justify-content: center; /* 中央寄せ */
+        margin-bottom: 15px;
+    }
+    .system-bubble {
+        background-color: rgba(0, 0, 0, 0.2); /* 半透明の黒グレー */
+        color: #fff;
+        padding: 4px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        text-align: center;
+        max-width: 80%;
+    }
+    .system-time {
+        display: block;
+        font-size: 11px;
+        margin-bottom: 2px;
+        opacity: 0.9;
+    }
+
+    /* --------------------------------------------------
+       UIパーツ
+    -------------------------------------------------- */
+    .upload-box {
+        background: rgba(255, 255, 255, 0.98);
+        padding: 30px; border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        width: 90%; max-width: 480px;
+        position: fixed; top: 50%; left: 50%; 
+        transform: translate(-50%, -50%); z-index: 100;
+        display: flex; flex-direction: column; gap: 15px;
+        max-height: 95vh; overflow-y: auto;
+    }
+    h2 { margin: 0 0 5px 0; font-size: 20px; color: #333; }
+    .step-section { border: 1px solid #e1e4e8; border-radius: 8px; padding: 15px; background: #fdfdfd; text-align: left; }
+    .step-label { font-size: 13px; color: #333; font-weight: bold; display: block; margin-bottom: 10px; border-left: 4px solid #4b7bec; padding-left: 8px; }
+    .btn, .input-text { padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; width: 100%; border: 1px solid #ccc; margin-bottom: 8px; }
+    .input-text { background: #fff; color: #333; }
+    .btn { cursor: pointer; border: none; text-decoration: none; display: block; transition: 0.2s; line-height: 1.4; }
+    .btn-white { background-color: #fff; border: 1px solid #ccc; color: #333; } .btn-white:hover { background-color: #f0f0f0; }
+    .btn-blue { background-color: #4b7bec; color: white; } .btn-blue:hover { background-color: #3867d6; }
+    .file-input-container { position: relative; overflow: hidden; display: block; width: 100%; margin-bottom: 8px; }
+    .file-input-container input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+    .file-visual-btn { background-color: #4b7bec; color: white; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; display: block; text-align: center; }
+    .file-visual-btn:hover { background-color: #3867d6; }
+    .status-msg { font-size: 11px; color: #06c755; margin-bottom: 5px; height: auto; white-space: pre-wrap; line-height: 1.4; }
+    .divider { display: flex; align-items: center; color: #999; font-size: 11px; margin: 10px 0; }
+    .divider::before, .divider::after { content: ""; flex: 1; border-bottom: 1px solid #ddd; }
+    .divider::before { margin-right: 10px; } .divider::after { margin-left: 10px; }
+    .guide-details { background: #f4f7fa; border-radius: 6px; padding: 8px; margin-bottom: 10px; border: 1px solid #e1e4e8; }
+    .guide-details summary { font-size: 11px; font-weight: bold; color: #4b7bec; cursor: pointer; outline: none; }
+    .guide-content { font-size: 11px; color: #555; line-height: 1.5; margin-top: 8px; padding-left: 5px;}
+    .guide-content ol { padding-left: 20px; margin: 5px 0; }
+    .btn-start { background-color: #06c755; color: white; margin-top: 5px; font-size: 16px; padding: 15px; }
+    .btn-start:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.7; }
+    .btn-start:not(:disabled):hover { background-color: #05b34c; }
+    
+    .operation-guide { position: fixed; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 10px 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; z-index: 90; backdrop-filter: blur(4px); display: none; }
+    .key-badge { background: #fff; color: #333; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 4px; }
+    
+    .control-panel { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 12px; z-index: 200; display: none; text-align: center; backdrop-filter: blur(4px); }
+    .btn-record { background-color: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .btn-record:hover { background-color: #ff6b81; }
+    .status-text { color: white; font-size: 12px; margin-top: 8px; }
+
 </style>
 </head>
 <body>
 
 <div class="upload-box" id="uploadArea">
-    <h2>グループ動画メーカー</h2>
+    <h2>トーク動画メーカー</h2>
 
     <div class="step-section">
-        <span class="step-label">① メンバーアイコン (複数可・任意)</span>
-        <div style="font-size:11px; color:#555; margin-bottom:5px;">
-            ※ファイル名＝名前 (例: 佐藤.jpg)
-        </div>
+        <span class="step-label">① メンバーアイコン (任意)</span>
         <div class="file-input-container">
             <div class="file-visual-btn">👤 画像をまとめて選択...</div>
             <input type="file" id="iconInput" accept="image/*" multiple>
@@ -151,7 +155,7 @@
 
         <div style="margin-bottom: 15px;">
             <button class="btn btn-white" onclick="downloadCsvTemplate()">
-                📥 既読数付きテンプレ(CSV)をDL
+                📥 テンプレ(CSV)をDL
             </button>
             <div class="file-input-container">
                 <div class="file-visual-btn">📄 CSVファイルをアップロード</div>
@@ -171,7 +175,7 @@
                     </button>
                     <div id="copyStatus" style="color:#06c755;"></div>
                     <div style="margin-top:5px; font-size:10px;">
-                        ※4列目に数字を入れると「既読 数」になります
+                        ※名前を「System」にするとシステムログになります
                     </div>
                     <br>
                     <strong>公開手順:</strong>
@@ -214,22 +218,22 @@
     let mediaRecorder = null;
     let recordedChunks = [];
 
-    // --- CSVテンプレートDL (既読数カラム追加) ---
+    // --- CSVテンプレートDL ---
     function downloadCsvTemplate() {
         const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
         const dataLines = [
             "Who,Message,Time,ReadCount",
-            "自分,ランチどこ行く？,12:00,3",
-            "佐藤,駅前のお店はどう？,12:01,",
-            "自分,いいね！,12:02,2",
-            "鈴木,賛成！,12:05,"
+            "自分,スナコママサヌキさんを招待しました。,17:40,",
+            "System,スナコママサヌキが参加しました。,17:41,",
+            "スナコママサヌキ,よろしくお願いします！,17:42,2",
+            "System,スナコママサヌキが退出しました。,17:43,"
         ];
         const content = dataLines.join("\n");
         const blob = new Blob([bom, content], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "group_sample_readcount.csv";
+        a.download = "system_msg_sample.csv";
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -238,9 +242,9 @@
     function copyTableData() {
         const dataLines = [
             "Who\tMessage\tTime\tReadCount",
-            "自分\t4列目に数字を入れると…,12:00\t3",
-            "佐藤\t既読数が出るんだね！,12:01\t",
-            "自分\tそう。空欄ならただの「既読」になります。,12:02\t2"
+            "自分\tシステムメッセージのテスト\t10:00\t",
+            "System\t〇〇が退出しました。\t10:01\t",
+            "自分\tこんな感じでグレーの表示になります\t10:02\t"
         ];
         const text = dataLines.join("\n");
         navigator.clipboard.writeText(text).then(() => {
@@ -254,23 +258,18 @@
     document.getElementById('iconInput').addEventListener('change', function(e) {
         const files = e.target.files;
         if (!files || files.length === 0) return;
-
         let loadedCount = 0;
         const total = files.length;
         let names = [];
-
         Array.from(files).forEach(file => {
             const reader = new FileReader();
             reader.onload = function(evt) {
                 const name = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
                 userIcons[name] = evt.target.result;
-                
                 loadedCount++;
                 names.push(name);
-
                 if (loadedCount === total) {
-                    document.getElementById('iconStatus').innerText = 
-                        `セット完了 (${total}件):\n` + names.join(", ");
+                    document.getElementById('iconStatus').innerText = `セット完了 (${total}件):\n` + names.join(", ");
                 }
             };
             reader.readAsDataURL(file);
@@ -311,7 +310,6 @@
     async function startTool() {
         const url = document.getElementById('urlInput').value.trim();
         const btn = document.getElementById('startBtn');
-
         if (uploadedCsvText) {
             parseCSV(uploadedCsvText);
             startDisplay();
@@ -412,7 +410,6 @@
             let cols = rows[i].split(',');
             if (cols.length < 2) continue;
             const clean = s => s ? s.trim().replace(/^"|"$/g, '') : '';
-            // 4列目(ReadCount)を取得
             const readCount = cols[3] ? clean(cols[3]) : '';
             chatData.push({ 
                 who: clean(cols[0]), 
@@ -431,14 +428,21 @@
         const isMe = ['Me', 'me', '自分', 'Self'].includes(data.who);
         
         let html = '';
-        if (isMe) {
-            // 既読数の表示処理
-            // 数字があれば「既読 N」、なければ「既読」
-            let readText = '既読';
-            if (data.readCount && data.readCount.length > 0) {
-                readText += ' ' + data.readCount;
-            }
 
+        // ★システムメッセージの判定
+        if (data.who === 'System' || data.who === 'システム') {
+            // 時間がある場合は表示、なければ表示しない
+            const timeHtml = data.time ? `<span class="system-time">${data.time}</span>` : '';
+            html = `
+            <div class="chat-row system-row">
+                <div class="system-bubble">
+                    ${timeHtml}
+                    <div>${data.msg}</div>
+                </div>
+            </div>`;
+        } else if (isMe) {
+            let readText = '既読';
+            if (data.readCount && data.readCount.length > 0) readText += ' ' + data.readCount;
             html = `
             <div class="chat-row right">
                 <div class="chat-content">
@@ -452,7 +456,6 @@
         } else {
             const iconUrl = userIcons[data.who];
             const avatarHtml = iconUrl ? `<img src="${iconUrl}">` : ``;
-
             html = `<div class="chat-row left"><div class="avatar">${avatarHtml}</div><div class="chat-content"><div class="name">${data.who}</div><div class="row-bottom"><div class="bubble">${data.msg}</div><span class="time">${data.time}</span></div></div></div>`;
         }
         chatArea.insertAdjacentHTML('beforeend', html);
